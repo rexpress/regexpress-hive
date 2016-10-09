@@ -1,22 +1,26 @@
-package regexpress.hiveserde.test;
+package express.regular.hive.test;
 
 import com.google.gson.Gson;
+import express.regular.common.GroupResult;
+import express.regular.common.TestResult;
+import express.regular.common.Tester;
+import express.regular.hive.HiveTester;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.RegexSerDe;
+import org.junit.Assert;
 import org.junit.Test;
-import regexpress.common.TestResult;
-import regexpress.hiveserde.Main;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainTest {
-    private static Gson gson = new Gson();
+public class HiveTesterTest {
+
     @Test
-    public void mainTest() {
+    public void hiveTest() {
         Map<String, Object> configMap = new HashMap<String, Object>();
+        configMap.put(Tester.CONFIG_IS_DEBUG, true);
         configMap.put(RegexSerDe.INPUT_REGEX, "([a-zA-Z]*) ([a-zA-Z]*) ([a-zA-Z]*)");
         configMap.put(serdeConstants.LIST_COLUMNS, "A,B,C");
         configMap.put(serdeConstants.LIST_COLUMN_TYPES, "string,string,string");
@@ -30,16 +34,13 @@ public class MainTest {
         String configJsonString = gson.toJson(configMap);
         String testJsonString = gson.toJson(testMap);
 
-        Main main = new Main();
-        TestResult testResult = main.testRegex(configJsonString, testJsonString);
-
-        if(testResult != null) {
-            System.out.println(gson.toJson(testResult));
-        }
-
-        /*testResult.getTestResult().forEach((result)->{
-            System.out.println(result);
-        });*/
-
+        HiveTester tester = new HiveTester();
+        TestResult testResult = tester.testMain(configJsonString, testJsonString);
+        Assert.assertEquals(testResult.getType(), TestResult.Type.GROUP);
+        Assert.assertNotNull(testResult.getResult());
+        GroupResult groupResult = (GroupResult) testResult.getResult();
+        Assert.assertArrayEquals(groupResult.getColumns().toArray(), new String[]{"A", "B", "C"});
+        Assert.assertArrayEquals(groupResult.getResultList().get(0).toArray(), new String[]{"Hello", "Test", "String"});
+        Assert.assertNull(groupResult.getResultList().get(1));
     }
 }
