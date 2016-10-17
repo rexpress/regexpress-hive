@@ -1,26 +1,26 @@
 package express.regular.hive;
 
-import com.google.gson.Gson;
-import express.regular.common.*;
+import express.regular.common.GroupResult;
+import express.regular.common.TestResult;
+import express.regular.common.Tester;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.RegexSerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.io.Text;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 public class HiveTester extends Tester {
 
-    private static Gson gson = new Gson();
-
     public static final String CONFIG_INPUT_REGEX = RegexSerDe.INPUT_REGEX;
     public static final String CONFIG_LIST_COLUMNS = serdeConstants.LIST_COLUMNS;
     public static final String CONFIG_LIST_COLUMN_TYPES = serdeConstants.LIST_COLUMN_TYPES;
     public static final String CONFIG_INPUT_REGEX_CASE_SENSITIVE = RegexSerDe.INPUT_REGEX_CASE_SENSITIVE;
 
-    public TestResult testRegex(Map<String, Object> configMap, List<String> testStrings) {
+    public TestResult testRegex(Map<String, Object> configMap, List<String> testStrings) throws Exception {
         RegexSerDe regexSerde = new RegexSerDe();
 
         Properties props = new Properties();
@@ -28,7 +28,7 @@ public class HiveTester extends Tester {
         props.setProperty(serdeConstants.LIST_COLUMNS, (String) configMap.get(CONFIG_LIST_COLUMNS));
         props.setProperty(serdeConstants.LIST_COLUMN_TYPES, ((String) configMap.get(CONFIG_LIST_COLUMN_TYPES)).toLowerCase());
         if(configMap.containsKey(CONFIG_INPUT_REGEX_CASE_SENSITIVE)) {
-            props.setProperty(RegexSerDe.INPUT_REGEX_CASE_SENSITIVE, (String) configMap.get(CONFIG_INPUT_REGEX_CASE_SENSITIVE));
+            props.setProperty(RegexSerDe.INPUT_REGEX_CASE_SENSITIVE, String.valueOf(configMap.get(CONFIG_INPUT_REGEX_CASE_SENSITIVE)));
         }
         if(configMap.containsKey("output.format.string")) {
             props.setProperty("output.format.string", (String) configMap.get("output.format.string"));
@@ -48,23 +48,24 @@ public class HiveTester extends Tester {
         TestResult testResult = new TestResult();
         testResult.setType(TestResult.Type.GROUP);
 
-        try {
-            regexSerde.initialize(null, props);
-            String columns[] = props.getProperty(serdeConstants.LIST_COLUMNS).split(",");
+        String columns[] = props.getProperty(serdeConstants.LIST_COLUMNS).split(",");
 
-            GroupResult groupResult = new GroupResult();
-            for(String column : columns) {
-                groupResult.getColumns().add(column);
-            }
-            for(int i = 0; i < testStrings.size(); i++) {
-                String testString = testStrings.get(i);
-                groupResult.getResultList().add((List<Object>) regexSerde.deserialize(new Text(testString)));
-            }
-            testResult.setResult(groupResult);
-        } catch (SerDeException e) {
-            e.printStackTrace();
+        regexSerde.initialize(null, props);
+
+        GroupResult groupResult = new GroupResult();
+        for(String column : columns) {
+            groupResult.getColumns().add(column);
         }
-
+        for(int i = 0; i < testStrings.size(); i++) {
+            String testString = testStrings.get(i);
+            try {
+                ArrayList<Object> row = (ArrayList<Object>) regexSerde.deserialize(new Text(testString));
+                groupResult.getResultList().add((List<Object>) row.clone());
+            } catch (SerDeException e) {
+                throw new Exception(String.format("Error on %s", testString), e);
+            }
+        }
+        testResult.setResult(groupResult);
         return testResult;
     }
 

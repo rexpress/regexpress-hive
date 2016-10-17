@@ -3,7 +3,6 @@ package express.regular.hive.test;
 import com.google.gson.Gson;
 import express.regular.common.GroupResult;
 import express.regular.common.TestResult;
-import express.regular.common.Tester;
 import express.regular.hive.HiveTester;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.RegexSerDe;
@@ -20,7 +19,6 @@ public class HiveTesterTest {
     @Test
     public void hiveTest() {
         Map<String, Object> configMap = new HashMap<String, Object>();
-        configMap.put(Tester.CONFIG_IS_DEBUG, true);
         configMap.put(RegexSerDe.INPUT_REGEX, "([a-zA-Z]*) ([a-zA-Z]*) ([a-zA-Z]*)");
         configMap.put(serdeConstants.LIST_COLUMNS, "A,B,C");
         configMap.put(serdeConstants.LIST_COLUMN_TYPES, "string,string,string");
