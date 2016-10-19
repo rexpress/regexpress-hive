@@ -14,9 +14,10 @@ RUN cd /tmp && \
     mvn -f $REPOSITORY-$BRANCH package && \
     rm -rf $BRANCH.zip && \
     mv $REPOSITORY-$BRANCH/target/lib /root && \
-    mv $REPOSITORY-$BRANCH/target/ARTIFACT-$BRANCH.jar /root && \
+    mv $REPOSITORY-$BRANCH/target/$ARTIFACT-$BRANCH.jar /root && \
     rm -rf /tmp/* && \
-    echo 'java -jar /root/ARTIFACT-$BRANCH.jar "$1" "$2"' > /root/run.sh && \
-    chmod 755 /root/run.sh
-
-ENTRYPOINT ["sh","/root/run.sh"]
+    cd /root && \
+    echo "java -jar /root/$ARTIFACT-$BRANCH.jar \"\$@\"" > run.sh && \
+    chmod 755 run.sh 
+    
+ENTRYPOINT ["/bin/sh", "/root/run.sh"]
