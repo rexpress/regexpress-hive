@@ -60,7 +60,7 @@ public class HiveTester extends Tester {
             String testString = testStrings.get(i);
             try {
                 ArrayList<Object> row = (ArrayList<Object>) regexSerde.deserialize(new Text(testString));
-                groupResult.getResultList().add(row == null ? null : (List<Object>) row.clone());
+                groupResult.getResultList().add(row == null ? null : (List<String>) row.clone());
             } catch (SerDeException e) {
                 throw new Exception(String.format("Error on %s", testString), e);
             }
